@@ -1,0 +1,619 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IDR Capture Decision Selector</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body{
+    font-family:system-ui,sans-serif;
+    background:#0f172a;
+    color:#e5e7eb;
+    margin:0;
+    padding:30px;
+    display:grid;
+    gap:20px;
+  }
+  .card{
+    background:#111827;
+    border:1px solid #334155;
+    border-radius:12px;
+    padding:24px;
+    max-width:900px;
+    margin:auto;
+  }
+  h2{margin-top:0;color:#60a5fa;}
+  label{
+    display:block;
+    margin-top:12px;
+    margin-bottom:6px;
+    font-weight:500;
+    font-size:13px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:#9ca3af;
+  }
+  select{
+    padding:8px 10px;
+    border-radius:8px;
+    border:1px solid #334155;
+    background:#1e293b;
+    color:#e5e7eb;
+    width:100%;
+    font-size:13px;
+  }
+  select:focus{
+    outline:none;
+    border-color:#60a5fa;
+    box-shadow:0 0 0 1px #60a5fa;
+  }
+  .row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+  }
+  .field{
+    flex:1 1 260px;
+    min-width:220px;
+  }
+  .note{
+    font-size:13px;
+    color:#94a3b8;
+    margin-top:10px;
+  }
+  .result{
+    margin-top:16px;
+    padding:12px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:500;
+  }
+  .green{
+    background:#022c22;
+    color:#86efac;
+    border:1px solid #16a34a;
+  }
+  .red{
+    background:#450a0a;
+    color:#fca5a5;
+    border:1px solid #dc2626;
+  }
+  .info{
+    background:#0b1220;
+    color:#bfdbfe;
+    border:1px solid #3b82f6;
+  }
+  button{
+    margin-top:16px;
+    margin-right:8px;
+    padding:8px 14px;
+    border-radius:8px;
+    border:1px solid #334155;
+    background:#1e293b;
+    color:#e5e7eb;
+    cursor:pointer;
+    font-weight:600;
+    font-size:13px;
+  }
+  button:hover{
+    background:#111827;
+  }
+  @media(max-width:720px){
+    body{padding:16px;}
+    .card{padding:16px;}
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>IDR Capture Decision Selector</h2>
+  <p class="note">
+    Scenario selector + Capture Decision dropdowns, including Fair Health and Negotiation Amount Less Than Anthem's QPA.
+  </p>
+
+  <label>Scenario</label>
+  <select id="scenarioSelect">
+    <option value="">— Select Scenario —</option>
+  </select>
+
+  <div id="scenarioNote" class="result info" style="display:none;"></div>
+
+  <div class="row">
+    <div class="field">
+      <label>Decision</label>
+      <select id="decisionSelect"></select>
+    </div>
+    <div class="field">
+      <label>Decision Rationale</label>
+      <select id="decisionRationaleSelect"></select>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label>Specific Rationale</label>
+      <select id="specificRationaleSelect"></select>
+    </div>
+    <div class="field">
+      <label>Root Cause Dept</label>
+      <select id="rootCauseSelect"></select>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label>Decision Code</label>
+      <select id="decisionCodeSelect"></select>
+    </div>
+    <div class="field">
+      <label>Decision Rationale Code</label>
+      <select id="decisionRationaleCodeSelect"></select>
+    </div>
+  </div>
+
+  <div id="statusBox" class="result" style="display:none;"></div>
+
+  <button type="button" onclick="copySelections()">Copy Results</button>
+  <button type="button" onclick="resetAll()">Reset All</button>
+
+  <p class="note">
+    You can still manually change any dropdown after loading a scenario.
+  </p>
+</div>
+
+<script>
+  const options = {
+    decision: [
+      "— Select —",
+      "Upheld",
+      "Overturned",
+      "Dismissed"
+    ],
+    decisionRationale: [
+      "— Select —",
+      "No Further Action",
+      "Awaiting Provider Response",
+      "Negotiation Offer Accepted",
+      "Accepted Provider Offer",
+      "Provider Did Not Accept Offer",
+      "Post Pay Decision",
+      "Ineligible Negotiation Request",
+      "Ineligible IDR Negotiation Request",
+      "Misroute",
+      "Duplicate",
+      "Need Additional Info",
+      "Dispute Rights",
+      "Arbitration Initiated/In Process"
+    ],
+    specificRationale: [
+      "— Select —",
+      "Unable to make offer",
+      "Additional Payment Offered",
+      "Additional Amount Offered – Fair Health",
+      "Claim Processed Correctly",
+      "Adjustment Not Needed",
+      "Adjustment Warranted",
+      "Failure to Submit",
+      "Call Center Adjustment",
+      "Not a Federal IDR Dispute",
+      "Claim Out of Scope",
+      "Closed",
+      "BlueCard Decision",
+      "Misroute Correspondence",
+      "Negotiation Not Filed Timely",
+      "Routed to Other Department",
+      "Provider Agreed to Anthem Offer",
+      "Dispute Rights Exhausted"
+    ],
+    rootCause: [
+      "— Select —",
+      "Provider",
+      "Claims – Adjudication",
+      "Leave Blank"
+    ],
+    decisionCode: [
+      "— Select —",
+      "No Additional Payment",
+      "Additional Payment Appropriate",
+      "Additional Payment Appropriate - Fair Health Rate",
+      "Provider Decision",
+      "Denied",
+      "Denied Claim",
+      "Participating Provider",
+      "State Surprise Bill Applies",
+      "Failed to Initiate Negotiation within 30 Days",
+      "NCN/Zelis/Multi-Plan",
+      "PPR/SIU Claim",
+      "ITS Home",
+      "Services Not Covered under NSA or Prior Pricing/CSRN Agreement",
+      "Previous Case Open",
+      "Previous Case Resolved",
+      "Unable to Determine Nature of Request",
+      "No Additional Action Warranted",
+      "Member Details Unavailable",
+      "Not Applicable",
+      "RD28 – Unable to determine nature"
+    ],
+    decisionRationaleCode: [
+      "— Select —",
+      "Original Payment Sufficient",
+      "No Further Action",
+      "Provider Notified",
+      "Correct Payment Made – OON Rate",
+      "Correct Payment Made – QPA Rate",
+      "Correct Payment Made – Bluecard Plan Rate",
+      "Check Not Posted",
+      "Not Applicable"
+    ]
+  };
+
+  const scenarios = {
+    "Initial Offer – Awaiting Provider Response": {
+      note: "Offer can be made; waiting on provider response.",
+      decision: "Upheld",
+      decisionRationale: "Awaiting Provider Response",
+      specificRationale: "Additional Payment Offered",
+      rootCause: "Provider",
+      decisionCode: "Provider Decision",
+      decisionRationaleCode: "No Further Action",
+      severity: "green"
+    },
+    "Fair Health – Awaiting Provider Response": {
+      note: "Offer based on Fair Health Rate; awaiting provider response.",
+      decision: "Upheld",
+      decisionRationale: "Awaiting Provider Response",
+      specificRationale: "Additional Amount Offered – Fair Health",
+      rootCause: "Provider",
+      decisionCode: "Additional Payment Appropriate - Fair Health Rate",
+      decisionRationaleCode: "Provider Notified",
+      severity: "green"
+    },
+    "Negotiation Amount Less Than Anthem’s QPA": {
+      note: "Provider’s negotiated amount is less than Anthem’s QPA; provider offer accepted and adjustment warranted.",
+      decision: "Overturned",
+      decisionRationale: "Accepted Provider Offer",
+      specificRationale: "Adjustment Warranted",
+      rootCause: "Provider",
+      decisionCode: "Additional Payment Appropriate",
+      decisionRationaleCode: "Provider Notified",
+      severity: "green"
+    },
+    "No Offer Can Be Made": {
+      note: "MAA/QPA is not higher than original allowance; no offer.",
+      decision: "Upheld",
+      decisionRationale: "No Further Action",
+      specificRationale: "Unable to make offer",
+      rootCause: "Provider",
+      decisionCode: "No Additional Payment",
+      decisionRationaleCode: "Original Payment Sufficient",
+      severity: "green"
+    },
+    "Provider Accepted Offer – No Adjustment Needed": {
+      note: "Offer accepted; no adjustment required.",
+      decision: "Overturned",
+      decisionRationale: "Negotiation Offer Accepted",
+      specificRationale: "Adjustment Not Needed",
+      rootCause: "Provider",
+      decisionCode: "Additional Payment Appropriate",
+      decisionRationaleCode: "Not Applicable",
+      severity: "green"
+    },
+    "Provider Accepted Offer – Adjustment Needed": {
+      note: "Offer accepted; claim requires adjustment.",
+      decision: "Overturned",
+      decisionRationale: "Negotiation Offer Accepted",
+      specificRationale: "Adjustment Warranted",
+      rootCause: "Provider",
+      decisionCode: "Additional Payment Appropriate",
+      decisionRationaleCode: "Not Applicable",
+      severity: "green"
+    },
+    "Provider Did Not Accept – No Additional Info": {
+      note: "Provider declined offer and did not submit new information.",
+      decision: "Upheld",
+      decisionRationale: "Provider Did Not Accept Offer",
+      specificRationale: "Claim Processed Correctly",
+      rootCause: "Provider",
+      decisionCode: "No Additional Payment",
+      decisionRationaleCode: "No Further Action",
+      severity: "red"
+    },
+    "Post Pay – Upheld (No Additional Payment)": {
+      note: "Post Pay Review Board upheld original payment.",
+      decision: "Upheld",
+      decisionRationale: "Post Pay Decision",
+      specificRationale: "Failure to Submit",
+      rootCause: "Provider",
+      decisionCode: "No Additional Payment",
+      decisionRationaleCode: "Correct Payment Made – OON Rate",
+      severity: "green"
+    },
+    "Post Pay – Overturned (Additional Payment Approved)": {
+      note: "Post Pay Review Board overturned and approved additional payment.",
+      decision: "Overturned",
+      decisionRationale: "Post Pay Decision",
+      specificRationale: "Call Center Adjustment",
+      rootCause: "Claims – Adjudication",
+      decisionCode: "Additional Payment Appropriate",
+      decisionRationaleCode: "Not Applicable",
+      severity: "green"
+    },
+    "Misroute – Routed to Other Department": {
+      note: "Case misrouted to IDR and needs to be sent to another department.",
+      decision: "Dismissed",
+      decisionRationale: "Misroute",
+      specificRationale: "Routed to Other Department",
+      rootCause: "Provider",
+      decisionCode: "No Additional Action Warranted",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+    "Misroute – State Surprise Bill Applies": {
+      note: "State Surprise Bill applies; not a Federal IDR dispute.",
+      decision: "Dismissed",
+      decisionRationale: "Ineligible IDR Negotiation Request",
+      specificRationale: "Not a Federal IDR Dispute",
+      rootCause: "Provider",
+      decisionCode: "State Surprise Bill Applies",
+      decisionRationaleCode: "No Further Action",
+      severity: "red"
+    },
+    "Timely Filing – Negotiation Not Filed Timely": {
+      note: "Negotiation request received outside 30-business-day timeframe.",
+      decision: "Upheld",
+      decisionRationale: "Ineligible IDR Negotiation Request",
+      specificRationale: "Negotiation Not Filed Timely",
+      rootCause: "Provider",
+      decisionCode: "Failed to Initiate Negotiation within 30 Days",
+      decisionRationaleCode: "No Further Action",
+      severity: "red"
+    },
+    "Out of Scope – NCN/Zelis/Prior Pricing": {
+      note: "Claim priced under NCN/Zelis/Multiplan or other prior pricing.",
+      decision: "Dismissed",
+      decisionRationale: "Ineligible IDR Negotiation Request",
+      specificRationale: "Claim Out of Scope",
+      rootCause: "Provider",
+      decisionCode: "NCN/Zelis/Multi-Plan",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+    "Out of Scope – SIU/PPR Claim": {
+      note: "Claim handled by SIU/PPR; not eligible for IDR negotiation.",
+      decision: "Dismissed",
+      decisionRationale: "Ineligible IDR Negotiation Request",
+      specificRationale: "Claim Out of Scope",
+      rootCause: "Provider",
+      decisionCode: "PPR/SIU Claim",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+    "Out of Scope – Pended or No Check": {
+      note: "Claim pended or no check posted; negotiation cannot be considered yet.",
+      decision: "Dismissed",
+      decisionRationale: "Ineligible IDR Negotiation Request",
+      specificRationale: "Claim Out of Scope",
+      rootCause: "Provider",
+      decisionCode: "Not Applicable",
+      decisionRationaleCode: "Check Not Posted",
+      severity: "red"
+    },
+    "Out of Scope – Participating (Par) Provider": {
+      note: "Claim processed in-network; provider is participating.",
+      decision: "Dismissed",
+      decisionRationale: "Ineligible IDR Negotiation Request",
+      specificRationale: "Claim Out of Scope",
+      rootCause: "Provider",
+      decisionCode: "Participating Provider",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+    "Out of Scope – Denied or Zero-Priced Claim": {
+      note: "Claim denied or zero-priced; must be reprocessed before IDR.",
+      decision: "Dismissed",
+      decisionRationale: "Ineligible IDR Negotiation Request",
+      specificRationale: "Claim Out of Scope",
+      rootCause: "Provider",
+      decisionCode: "Denied Claim",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+    "Duplicate – Claim Level Duplicate": {
+      note: "Claim is a duplicate of another claim number.",
+      decision: "Dismissed",
+      decisionRationale: "Duplicate",
+      specificRationale: "Closed",
+      rootCause: "Provider",
+      decisionCode: "Unable to Determine Nature of Request",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+    "Duplicate – Case Already on File": {
+      note: "Negotiation case already exists for this request.",
+      decision: "Dismissed",
+      decisionRationale: "Duplicate",
+      specificRationale: "Closed",
+      rootCause: "Provider",
+      decisionCode: "Previous Case Open",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+    "ITS Home – Forward to Host Plan": {
+      note: "Claim is ITS Home; forwarded to host plan via B2.",
+      decision: "Dismissed",
+      decisionRationale: "Misroute",
+      specificRationale: "BlueCard Decision",
+      rootCause: "Provider",
+      decisionCode: "ITS Home",
+      decisionRationaleCode: "No Further Action",
+      severity: "red"
+    },
+    "ITS Host – DF 1133/1333 (Home Plan Decision)": {
+      note: "Home plan DF msg (1133 or 1333) – not NSA or prior pricing agreement.",
+      decision: "Dismissed",
+      decisionRationale: "Ineligible IDR Negotiation Request",
+      specificRationale: "BlueCard Decision",
+      rootCause: "Provider",
+      decisionCode: "Services Not Covered under NSA or Prior Pricing/CSRN Agreement",
+      decisionRationaleCode: "No Further Action",
+      severity: "red"
+    },
+    "Need Additional Info – Member / Claim Mismatch": {
+      note: "Information on request does not match claim/member details.",
+      decision: "Dismissed",
+      decisionRationale: "Need Additional Info",
+      specificRationale: "Closed",
+      rootCause: "Provider",
+      decisionCode: "Member Details Unavailable",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+    "Misroute – QPA Info Only / Correspondence": {
+      note: "Provider only questioning QPA or correspondence; not a negotiation.",
+      decision: "Dismissed",
+      decisionRationale: "Misroute",
+      specificRationale: "Misroute Correspondence",
+      rootCause: "Provider",
+      decisionCode: "RD28 – Unable to determine nature",
+      decisionRationaleCode: "Not Applicable",
+      severity: "red"
+    },
+    "Dispute Rights Exhausted": {
+      note: "Misquote resolved; dispute rights exhausted and case upheld.",
+      decision: "Upheld",
+      decisionRationale: "Dispute Rights",
+      specificRationale: "Dispute Rights Exhausted",
+      rootCause: "Provider",
+      decisionCode: "No Additional Payment",
+      decisionRationaleCode: "Correct Payment Made – OON Rate",
+      severity: "green"
+    },
+    "Arbitration Initiated / In Process": {
+      note: "Arbitration already on file; negotiation dismissed.",
+      decision: "Dismissed",
+      decisionRationale: "Arbitration Initiated/In Process",
+      specificRationale: "Provider Agreed to Anthem Offer",
+      rootCause: "Provider",
+      decisionCode: "Unable to Determine Nature of Request",
+      decisionRationaleCode: "No Further Action",
+      severity: "red"
+    }
+  };
+
+  function populateSelect(id, arr){
+    const sel = document.getElementById(id);
+    sel.innerHTML = "";
+    arr.forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      sel.appendChild(opt);
+    });
+  }
+
+  function initDropdowns(){
+    populateSelect("decisionSelect", options.decision);
+    populateSelect("decisionRationaleSelect", options.decisionRationale);
+    populateSelect("specificRationaleSelect", options.specificRationale);
+    populateSelect("rootCauseSelect", options.rootCause);
+    populateSelect("decisionCodeSelect", options.decisionCode);
+    populateSelect("decisionRationaleCodeSelect", options.decisionRationaleCode);
+  }
+
+  function initScenarios(){
+    const sel = document.getElementById("scenarioSelect");
+    Object.keys(scenarios).forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener("change", () => {
+      const name = sel.value;
+      const data = scenarios[name];
+      const noteBox = document.getElementById("scenarioNote");
+      const statusBox = document.getElementById("statusBox");
+      if(!data){
+        noteBox.style.display="none";
+        statusBox.style.display="none";
+        return;
+      }
+      document.getElementById("decisionSelect").value = data.decision;
+      document.getElementById("decisionRationaleSelect").value = data.decisionRationale;
+      document.getElementById("specificRationaleSelect").value = data.specificRationale;
+      document.getElementById("rootCauseSelect").value = data.rootCause;
+      document.getElementById("decisionCodeSelect").value = data.decisionCode;
+      document.getElementById("decisionRationaleCodeSelect").value = data.decisionRationaleCode;
+
+      noteBox.textContent = data.note || "";
+      noteBox.style.display = "block";
+      noteBox.className = "result info";
+
+      statusBox.style.display = "block";
+      if(data.severity === "green"){
+        statusBox.className = "result green";
+        statusBox.textContent = "✔ Scenario looks good. Proceed with this Capture Decision set.";
+      }else if(data.severity === "red"){
+        statusBox.className = "result red";
+        statusBox.textContent = "⚠ This scenario represents a denial / misroute / out-of-scope outcome. Make sure it matches your case before proceeding.";
+      }else{
+        statusBox.className = "result info";
+        statusBox.textContent = "Scenario loaded.";
+      }
+    });
+  }
+
+  function copySelections(){
+    const scenario = document.getElementById("scenarioSelect").value || "Custom / Not Selected";
+    const d = document.getElementById("decisionSelect").value;
+    const dr = document.getElementById("decisionRationaleSelect").value;
+    const sr = document.getElementById("specificRationaleSelect").value;
+    const rc = document.getElementById("rootCauseSelect").value;
+    const dc = document.getElementById("decisionCodeSelect").value;
+    const drc = document.getElementById("decisionRationaleCodeSelect").value;
+
+    const text =
+`Scenario: ${scenario}
+Decision: ${d}
+Decision Rationale: ${dr}
+Specific Rationale: ${sr}
+Root Cause: ${rc}
+Decision Code: ${dc}
+Decision Rationale Code: ${drc}`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        const statusBox = document.getElementById("statusBox");
+        statusBox.style.display = "block";
+        statusBox.className = "result info";
+        statusBox.textContent = "Copied to clipboard. Paste this into your case notes or training docs.";
+      }).catch(() => {
+        const statusBox = document.getElementById("statusBox");
+        statusBox.style.display = "block";
+        statusBox.className = "result red";
+        statusBox.textContent = "Clipboard copy was blocked. You can still manually copy the values.";
+      });
+    } else {
+      const statusBox = document.getElementById("statusBox");
+      statusBox.style.display = "block";
+      statusBox.className = "result red";
+      statusBox.textContent = "Clipboard API not available. You can still manually copy the values.";
+    }
+  }
+
+  function resetAll(){
+    document.getElementById("scenarioSelect").value = "";
+    ["decisionSelect","decisionRationaleSelect","specificRationaleSelect","rootCauseSelect","decisionCodeSelect","decisionRationaleCodeSelect"].forEach(id => {
+      const sel = document.getElementById(id);
+      if(sel) sel.selectedIndex = 0;
+    });
+    document.getElementById("scenarioNote").style.display = "none";
+    document.getElementById("statusBox").style.display = "none";
+  }
+
+  initDropdowns();
+  initScenarios();
+</script>
+</body>
+</html>
