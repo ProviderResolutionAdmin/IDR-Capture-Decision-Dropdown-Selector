@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -184,6 +183,8 @@
       "Duplicate",
       "Need Additional Info",
       "Dispute Rights",
+      "Arbitration Initiated/In Process",
+      "Arbitration Concluded",
       "Arbitration Initiated/In Process"
     ],
     specificRationale: [
@@ -204,7 +205,9 @@
       "Negotiation Not Filed Timely",
       "Routed to Other Department",
       "Provider Agreed to Anthem Offer",
-      "Dispute Rights Exhausted"
+      "Dispute Rights Exhausted",
+      "Negotiation Received After Arbitration",
+      "Negotiation Received Prior to Arbitration"
     ],
     rootCause: [
       "— Select —",
@@ -248,7 +251,41 @@
     ]
   };
 
+  // Updated scenarios:
   const scenarios = {
+    // New / updated entries to match screenshots
+    "Determine Duplicate - Open Negotiation w/ Open Arbitration on File": {
+      note: "Open negotiation case with an OPEN arbitration case on file. Send denial letter to the provider. (Verbiage: determine duplicate under Open Arbitration case on file.)",
+      decision: "Dismissed",
+      decisionRationale: "Arbitration Initiated/In Process",
+      specificRationale: "Negotiation Received After Arbitration",
+      rootCause: "Provider",
+      decisionCode: "Previous Case Open",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+    "Determine Duplicate - Open Negotiation w/ Dismissed Arbitration on File": {
+      note: "Open negotiation case with a DISMISSED arbitration case on file. Send denial letter to the provider. (Verbiage: Open determine duplicate / same as closed verbiage.)",
+      decision: "Dismissed",
+      decisionRationale: "Arbitration Concluded",
+      specificRationale: "Negotiation Received After Arbitration",
+      rootCause: "Provider",
+      decisionCode: "Previous Case Resolved",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+    "Determine Duplicate - Open Negotiation w/ Closed Arbitration on File/In Adjustment": {
+      note: "Open negotiation case with CLOSED arbitration case on file (or in adjustment). Send denial letter to the provider. Add OE note: 'This case is a duplicate to an Arbitration case. Sent Denial letter to the provider with details and this case is dismissed as per OE'.",
+      decision: "Dismissed",
+      decisionRationale: "Arbitration Concluded",
+      specificRationale: "Negotiation Received After Arbitration",
+      rootCause: "Provider",
+      decisionCode: "Previous Case Resolved",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+
+    // keep the rest of existing scenarios untouched (copied from original)
     "Initial Offer – Awaiting Provider Response": {
       note: "Offer can be made; waiting on provider response.",
       decision: "Upheld",
@@ -429,16 +466,6 @@
       decisionRationaleCode: "Provider Notified",
       severity: "red"
     },
-    "Duplicate – Case Already on File": {
-      note: "Negotiation case already exists for this request.",
-      decision: "Dismissed",
-      decisionRationale: "Duplicate",
-      specificRationale: "Closed",
-      rootCause: "Provider",
-      decisionCode: "Previous Case Open",
-      decisionRationaleCode: "Provider Notified",
-      severity: "red"
-    },
     "ITS Home – Forward to Host Plan": {
       note: "Claim is ITS Home; forwarded to host plan via B2.",
       decision: "Dismissed",
@@ -488,16 +515,6 @@
       decisionCode: "No Additional Payment",
       decisionRationaleCode: "Correct Payment Made – OON Rate",
       severity: "green"
-    },
-    "Arbitration Initiated / In Process": {
-      note: "Arbitration already on file; negotiation dismissed.",
-      decision: "Dismissed",
-      decisionRationale: "Arbitration Initiated/In Process",
-      specificRationale: "Provider Agreed to Anthem Offer",
-      rootCause: "Provider",
-      decisionCode: "Unable to Determine Nature of Request",
-      decisionRationaleCode: "No Further Action",
-      severity: "red"
     }
   };
 
