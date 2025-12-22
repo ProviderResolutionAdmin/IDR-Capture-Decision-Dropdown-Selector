@@ -284,7 +284,17 @@
       decisionRationaleCode: "Provider Notified",
       severity: "red"
     },
-
+    "Duplicate – Exact Negotiation Duplicate": {
+      note: "Claim is a duplicate of another claim number.",
+      decision: "Dismissed",
+      decisionRationale: "Duplicate",
+      specificRationale: "Closed",
+      rootCause: "Provider",
+      decisionCode: "Unable to Determine Nature of Request",
+      decisionRationaleCode: "Provider Notified",
+      severity: "red"
+    },
+    
     // keep the rest of existing scenarios untouched (copied from original)
     "Initial Offer – Awaiting Provider Response": {
       note: "Offer can be made; waiting on provider response.",
@@ -453,16 +463,6 @@
       specificRationale: "Claim Out of Scope",
       rootCause: "Provider",
       decisionCode: "Denied Claim",
-      decisionRationaleCode: "Provider Notified",
-      severity: "red"
-    },
-    "Duplicate – Exact Negotiation Duplicate": {
-      note: "Claim is a duplicate of another claim number.",
-      decision: "Dismissed",
-      decisionRationale: "Duplicate",
-      specificRationale: "Closed",
-      rootCause: "Provider",
-      decisionCode: "Unable to Determine Nature of Request",
       decisionRationaleCode: "Provider Notified",
       severity: "red"
     },
